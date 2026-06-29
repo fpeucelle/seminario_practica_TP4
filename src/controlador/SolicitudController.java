@@ -127,6 +127,16 @@ public class SolicitudController {
         return actualizado;
     }
 
+    public void validarSolicitudExistente(int idSolicitud) throws ValidacionException, PersistenciaException {
+        if (idSolicitud <= 0) {
+            throw new ValidacionException("El ID de solicitud debe ser mayor a 0.");
+        }
+
+        if (!dao.existeSolicitud(idSolicitud)) {
+            throw new ValidacionException("La solicitud indicada no existe.");
+        }
+    }
+
     public BienCatalogo buscarBienPorId(int idBien) throws ValidacionException, PersistenciaException {
         if (idBien <= 0) {
             throw new ValidacionException("El ID del bien debe ser mayor a 0.");
@@ -148,6 +158,10 @@ public class SolicitudController {
         if (!dao.existeUsuario(idUsuario)) {
             throw new ValidacionException("El usuario solicitante no existe.");
         }
+    }
+
+    public String validarAdjuntoOpcional(String rutaAdjunto) throws ValidacionException {
+        return ValidadorAdjunto.validarRutaOpcional(rutaAdjunto);
     }
 
     public List<String> leerBitacora() throws IOException {

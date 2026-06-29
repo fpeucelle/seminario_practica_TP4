@@ -14,6 +14,8 @@ public interface ISolicitudDAO {
 
     boolean actualizarEstado(int idSolicitud, String nuevoEstado) throws PersistenciaException;
 
+    boolean existeSolicitud(int idSolicitud) throws PersistenciaException;
+
     BienCatalogo buscarBienPorId(int idBien) throws PersistenciaException;
 
     boolean existeUsuario(int idUsuario) throws PersistenciaException;

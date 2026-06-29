@@ -112,10 +112,7 @@ public class MainApp {
         System.out.println("Carga manual de items de la solicitud...");
         cargarItemsManual(controlador, scanner, nuevaSolicitud);
 
-        String rutaAdjunto = leerTexto(
-                scanner,
-                "Ruta de adjunto opcional [sin adjunto]: ");
-        cancelarSiCorresponde(rutaAdjunto);
+        String rutaAdjunto = leerRutaAdjunto(controlador, scanner);
         imprimirResumen(nuevaSolicitud);
 
         System.out.println();
@@ -178,18 +175,33 @@ public class MainApp {
         boolean continuar = false;
 
         do {
-            BienCatalogo bien = leerBienHomologado(controlador, scanner);
-            int cantidad = leerEnteroObligatorio(scanner, "Ingrese cantidad: ");
-
-            solicitud.agregarDetalle(new DetalleSolicitud(bien, cantidad));
+            DetalleSolicitud detalle = leerDetalleSolicitud(controlador, scanner);
+            solicitud.agregarDetalle(detalle);
+            BienCatalogo bien = detalle.getBien();
+            int cantidad = detalle.getCantidad();
             System.out.println("Item agregado: " + cantidad + "x " + bien.getDescripcion());
 
             continuar = leerConfirmacionObligatoria(scanner, "Agregar otro item? (S/N): ");
         } while (continuar);
     }
 
+    private static DetalleSolicitud leerDetalleSolicitud(SolicitudController controlador, Scanner scanner)
+            throws PersistenciaException {
+        while (true) {
+            BienCatalogo bien = leerBienHomologado(controlador, scanner);
+            int cantidad = leerEnteroObligatorio(scanner, "Ingrese cantidad: ");
+
+            try {
+                return new DetalleSolicitud(bien, cantidad);
+            } catch (ValidacionException e) {
+                System.out.println("Error de Validacion (Regla de Negocio): " + e.getMessage());
+                controlador.registrarErrorValidacion(e.getMessage());
+            }
+        }
+    }
+
     private static BienCatalogo leerBienHomologado(SolicitudController controlador, Scanner scanner)
-            throws ValidacionException, PersistenciaException {
+            throws PersistenciaException {
         while (true) {
             int idBien = leerEnteroObligatorio(
                     scanner,
@@ -199,7 +211,12 @@ public class MainApp {
                 continue;
             }
 
-            return controlador.buscarBienPorId(idBien);
+            try {
+                return controlador.buscarBienPorId(idBien);
+            } catch (ValidacionException e) {
+                System.out.println("Error de Validacion (Regla de Negocio): " + e.getMessage());
+                controlador.registrarErrorValidacion(e.getMessage());
+            }
         }
     }
 
@@ -268,8 +285,6 @@ public class MainApp {
         boolean actualizado = controlador.actualizarEstado(idSolicitud, nuevoEstado);
         if (actualizado) {
             System.out.println(">> EXITO: Estado actualizado correctamente.");
-        } else {
-            System.out.println(">> AVISO: No se encontro una solicitud con ese ID.");
         }
     }
 
@@ -284,7 +299,13 @@ public class MainApp {
                 continue;
             }
 
-            return idSolicitud;
+            try {
+                controlador.validarSolicitudExistente(idSolicitud);
+                return idSolicitud;
+            } catch (ValidacionException e) {
+                System.out.println("Error de Validacion (Regla de Negocio): " + e.getMessage());
+                controlador.registrarErrorValidacion(e.getMessage());
+            }
         }
     }
 
@@ -342,6 +363,21 @@ public class MainApp {
     private static String leerTexto(Scanner scanner, String mensaje) {
         System.out.print(mensaje);
         return scanner.nextLine();
+    }
+
+    private static String leerRutaAdjunto(SolicitudController controlador, Scanner scanner) {
+        while (true) {
+            String rutaAdjunto = leerTexto(scanner, "Ruta de adjunto opcional [sin adjunto]: ");
+            cancelarSiCorresponde(rutaAdjunto);
+
+            try {
+                controlador.validarAdjuntoOpcional(rutaAdjunto);
+                return rutaAdjunto;
+            } catch (ValidacionException e) {
+                System.out.println("Error de Validacion (Regla de Negocio): " + e.getMessage());
+                controlador.registrarErrorValidacion(e.getMessage());
+            }
+        }
     }
 
     private static int leerOpcionEstado(Scanner scanner, String[] estados) {

@@ -138,6 +138,25 @@ public class SolicitudDAOMySQL implements ISolicitudDAO {
     }
 
     @Override
+    public boolean existeSolicitud(int idSolicitud) throws PersistenciaException {
+        String query = "SELECT 1 FROM solicitudes_compra WHERE id_solicitud = ?";
+
+        try (Connection con = obtenerConexion()) {
+            con.setReadOnly(true);
+
+            try (PreparedStatement pst = con.prepareStatement(query)) {
+                pst.setInt(1, idSolicitud);
+
+                try (ResultSet rs = pst.executeQuery()) {
+                    return rs.next();
+                }
+            }
+        } catch (SQLException e) {
+            throw new PersistenciaException("No se pudo validar la solicitud en MySQL.", e);
+        }
+    }
+
+    @Override
     public BienCatalogo buscarBienPorId(int idBien) throws PersistenciaException {
         String query = "SELECT id_bien, descripcion, precio_referencia "
                 + "FROM bienes_catalogo WHERE id_bien = ?";
